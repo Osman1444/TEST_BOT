@@ -229,15 +229,21 @@ class CodroBot:
         """تشغيل البوت"""
         # For production with webhook on Railway
         port = int(os.environ.get('PORT', 8443))
-        app_url = os.environ.get('RAILWAY_STATIC_URL', '')
+        project_id = "228da3fd-d185-4e0e-90b5-0eccdf46c59c"
+        app_url = f"{project_id}.railway.app"
         
-        if not app_url:
-            self.logger.error("RAILWAY_STATIC_URL is not set!")
-            return
-            
         webhook_url = f"https://{app_url}/{self.token}"
         self.logger.info(f"Starting webhook on port {port}")
         self.logger.info(f"Webhook URL: {webhook_url}")
+        
+        # Set webhook
+        import requests
+        try:
+            set_webhook_url = f"https://api.telegram.org/bot{self.token}/setWebhook?url={webhook_url}"
+            response = requests.get(set_webhook_url)
+            self.logger.info(f"Webhook set response: {response.json()}")
+        except Exception as e:
+            self.logger.error(f"Failed to set webhook: {e}")
         
         self.application.run_webhook(
             listen="0.0.0.0",
