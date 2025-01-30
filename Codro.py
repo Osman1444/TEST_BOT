@@ -2,7 +2,6 @@ import asyncio
 import time
 import random
 import os
-from threading import Thread
 import google.generativeai as genai
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -232,19 +231,8 @@ class CodroBot:
                 return 'Unauthorized', 403
 
             update = Update.de_json(request.get_json(force=True), self.application.bot)
-            
-            # Create a new thread to handle the update
-            thread = Thread(target=lambda: asyncio.run(self.process_update(update)))
-            thread.start()
+            asyncio.run(self.application.process_update(update))
             return 'OK', 200
-
-    async def process_update(self, update: Update):
-        """Process a single update in a separate thread"""
-        try:
-            await self.application.initialize()
-            await self.application.process_update(update)
-        except Exception as e:
-            print(f"Error processing update: {e}")
 
     def run(self):
         """تشغيل البوت باستخدام webhook"""
