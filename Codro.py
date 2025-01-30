@@ -57,6 +57,9 @@ class CodroBot:
         # Initialize Flask app
         self.app = Flask(__name__)
         self.setup_webhook_handler()
+        
+        # Initialize the application
+        asyncio.run(self.application.initialize())
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
@@ -230,9 +233,16 @@ class CodroBot:
             if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
                 return 'Unauthorized', 403
 
-            update = Update.de_json(request.get_json(force=True), self.application.bot)
-            asyncio.run(self.application.process_update(update))
-            return 'OK', 200
+            # Create a new event loop for this request
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                update = Update.de_json(request.get_json(force=True), self.application.bot)
+                loop.run_until_complete(self.application.process_update(update))
+                return 'OK', 200
+            finally:
+                loop.close()
 
     def run(self):
         """تشغيل البوت باستخدام webhook"""
