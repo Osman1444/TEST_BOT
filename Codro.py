@@ -230,17 +230,31 @@ class CodroBot:
             if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
                 return 'Unauthorized', 403
 
-            update = Update.de_json(request.get_json(force=True), self.application.bot)
-            asyncio.run(self.application.process_update(update))
-            return 'OK', 200
+            try:
+                json_data = request.get_json(force=True)
+                print("Received update:", json_data)  # للتشخيص
+                
+                if not isinstance(json_data, dict):
+                    return 'Invalid update', 400
+                
+                if 'update_id' not in json_data:
+                    return 'Missing update_id', 400
+                
+                update = Update.de_json(json_data, self.application.bot)
+                if update:
+                    asyncio.run(self.application.process_update(update))
+                return 'OK', 200
+            except Exception as e:
+                print(f"Error processing update: {str(e)}")  # للتشخيص
+                return 'Error processing update', 500
 
     def run(self):
         """تشغيل البوت باستخدام webhook"""
-        # Get the port from Railway environment variable
-        port = int(os.environ.get('PORT', '8443'))
-        
-        # Start the Flask app
-        self.app.run(host='0.0.0.0', port=port)
+        if __name__ == '__main__':
+            # Get the port from Railway environment variable
+            port = int(os.environ.get('PORT', '8443'))
+            # Start the Flask app in development mode
+            self.app.run(host='0.0.0.0', port=port, debug=True)
 
 def main():
     bot = CodroBot()
