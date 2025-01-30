@@ -157,7 +157,7 @@ class CodroBot:
         print("إرسال رسالة 'جاري التحميل...'")
         loading_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="",
+            text="جاري التحميل... ⏳",
             parse_mode="HTML"
         )
 
@@ -166,12 +166,13 @@ class CodroBot:
             print("تم استدعاء update_loading_message")
             while not context.chat_data.get('response_received', False):
                 dots = "." * ((len(dots) % 3) + 1)
-                print(f"تحديث الرسالة إلى: جاري التحميل{dots}")
+                loading_text = f"جاري التحميل{dots} ⏳"
+                print(f"تحديث الرسالة إلى: {loading_text}")
                 try:
                     await context.bot.edit_message_text(
                         chat_id=update.effective_chat.id,
                         message_id=loading_message.message_id,
-                        text=f"جاري التحميل{dots}",
+                        text=loading_text,
                         parse_mode="HTML"
                     )
                     await asyncio.sleep(0.5)
