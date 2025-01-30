@@ -224,37 +224,42 @@ class CodroBot:
             await query.message.reply_text("تم اختيار كورس Python Basics! سيتم التواصل معك قريباً.", parse_mode="HTML")
 
     def setup_webhook_handler(self):
-        @self.app.post('/webhook')
+        @self.app.route('/webhook', methods=['POST'])
         def webhook_handler():
             """Handle incoming webhook updates"""
-            if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
-                return 'Unauthorized', 403
-
             try:
                 json_data = request.get_json(force=True)
                 print("Received update:", json_data)  # للتشخيص
                 
-                if not isinstance(json_data, dict):
-                    return 'Invalid update', 400
+                # تجاهل طلبات Railway
+                if isinstance(json_data, dict) and json_data.get('type') == 'DEPLOY':
+                    return 'OK', 200
                 
-                if 'update_id' not in json_data:
-                    return 'Missing update_id', 400
+                # التحقق من secret token فقط للطلبات من Telegram
+                if 'update_id' in json_data:
+                    if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
+                        return 'Unauthorized', 403
+                    
+                    update = Update.de_json(json_data, self.application.bot)
+                    if update:
+                        asyncio.run(self.application.process_update(update))
                 
-                update = Update.de_json(json_data, self.application.bot)
-                if update:
-                    asyncio.run(self.application.process_update(update))
                 return 'OK', 200
             except Exception as e:
                 print(f"Error processing update: {str(e)}")  # للتشخيص
                 return 'Error processing update', 500
 
+        @self.app.route('/')
+        def index():
+            return 'Bot is running!'
+
     def run(self):
         """تشغيل البوت باستخدام webhook"""
-        if __name__ == '__main__':
-            # Get the port from Railway environment variable
-            port = int(os.environ.get('PORT', '8443'))
-            # Start the Flask app in development mode
-            self.app.run(host='0.0.0.0', port=port, debug=True)
+        # Get the port from Railway environment variable
+        port = int(os.environ.get('PORT', '8443'))
+        
+        # Start the Flask app
+        self.app.run(host='0.0.0.0', port=port)
 
 def main():
     bot = CodroBot()
