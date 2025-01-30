@@ -225,13 +225,13 @@ class CodroBot:
 
     def setup_webhook_handler(self):
         @self.app.post('/webhook')
-        async def webhook_handler():
+        def webhook_handler():
             """Handle incoming webhook updates"""
             if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
                 return 'Unauthorized', 403
 
             update = Update.de_json(request.get_json(force=True), self.application.bot)
-            await self.application.process_update(update)
+            asyncio.run(self.application.process_update(update))
             return 'OK', 200
 
     def run(self):
