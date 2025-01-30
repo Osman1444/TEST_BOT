@@ -151,58 +151,19 @@ class CodroBot:
 
         print(f"تم استلام الرسالة من المستخدم: {self.user_id}")
 
-        if 'response_received' not in context.chat_data:
-            context.chat_data['response_received'] = False
-
-        print("إرسال رسالة 'جاري التحميل...'")
+        # إرسال رسالة التحميل
         loading_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="جاري التحميل... ⏳",
+            text="⏳",
             parse_mode="HTML"
         )
 
-        async def update_loading_message():
-            dots = ""
-            print("تم استدعاء update_loading_message")
-            while not context.chat_data.get('response_received', False):
-                dots = "." * ((len(dots) % 3) + 1)
-                loading_text = f"جاري التحميل{dots} ⏳"
-                print(f"تحديث الرسالة إلى: {loading_text}")
-                try:
-                    await context.bot.edit_message_text(
-                        chat_id=update.effective_chat.id,
-                        message_id=loading_message.message_id,
-                        text=loading_text,
-                        parse_mode="HTML"
-                    )
-                    await asyncio.sleep(0.5)
-                except Exception as e:
-                    print(f"حدث خطأ أثناء التحديث: {e}")
-                    break
-
-        async def fetch_response():
-            print("جاري الاتصال بـ 'جيميني' للحصول على الرد")
+        try:
+            # الحصول على الرد من جيميني
             response = await self.gemini_response(message_t=message, system_prompt=self.bot_config['system_prompt'])
             print(f"تم الحصول على الرد من جيميني: {response}")
-            return response
 
-        print("تشغيل مهمة update_loading_message")
-        update_task = asyncio.create_task(update_loading_message())
-
-        try:
-            response = await fetch_response()
-            print("تم الحصول على الرد بنجاح.")
-            print("تحديث response_received إلى True")
-            context.chat_data['response_received'] = True
-        except Exception as e:
-            print(f"حدث خطأ أثناء جلب الرد: {e}")
-            response = "حدث خطأ أثناء الرد\nالرجاء المحاولة لاحقا"
-
-        await update_task
-        print("تم إيقاف التحديث الدوري.")
-
-        try:
-            print(f"إرسال الرد النهائي: {response}")
+            # تحديث رسالة التحميل بالرد
             try:
                 await context.bot.edit_message_text(
                     chat_id=update.effective_chat.id,
@@ -221,17 +182,13 @@ class CodroBot:
                     parse_mode=None
                 )
         except Exception as e:
-            print(f"حدث خطأ أثناء تحديث الرسالة النهائية: {e}")
-            try:
-                clean_text = self.utils.clear_html(response)
-                await context.bot.edit_message_text(
-                    chat_id=update.effective_chat.id,
-                    message_id=loading_message.message_id,
-                    text=clean_text,
-                    parse_mode=None
-                )
-            except Exception as final_error:
-                print(f"فشل إرسال الرسالة النهائية: {final_error}")
+            print(f"حدث خطأ: {e}")
+            error_message = "عذراً، حدث خطأ أثناء معالجة طلبك. الرجاء المحاولة مرة أخرى."
+            await context.bot.edit_message_text(
+                chat_id=update.effective_chat.id,
+                message_id=loading_message.message_id,
+                text=error_message
+            )
 
     async def button_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle button callbacks"""

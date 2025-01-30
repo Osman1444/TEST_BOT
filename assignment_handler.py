@@ -21,7 +21,7 @@ class AssignmentHandler:
         # تهيئة Gemini
         genai.configure(api_key="AIzaSyAAhhHq792UUWT-e_6Ft0uYpkcBJ6FK5bs")
         self.model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash-thinking-exp-01-21",
+            model_name="gemini-2.0-flash-exp",
             generation_config={
                 "temperature": 0.9,
                 "top_p": 0.95,
