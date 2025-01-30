@@ -5,7 +5,7 @@ import google.generativeai as genai
 import json
 import logging
 import asyncio
-from bot_config import Data
+from bot_config import *
 from utils import Utils
 
 class QuizHandler:

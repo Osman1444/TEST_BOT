@@ -1,3 +1,28 @@
+import random
+
+# List to store used APIs
+used_apis = []
+
+def get_gemini_api():
+    global used_apis
+    
+    # Load all APIs
+    with open('GeminiAPI.txt', 'r') as f:
+        all_apis = [api.strip() for api in f.readlines()]
+    
+    # Get available APIs (ones that haven't been used)
+    available_apis = [api for api in all_apis if api not in used_apis]
+    
+    # If all APIs have been used, reset the used_apis list
+    if not available_apis:
+        used_apis.clear()
+        available_apis = all_apis
+    
+    # Select a random API from available ones
+    selected_api = random.choice(available_apis)
+    used_apis.append(selected_api)
+    return selected_api
+
 class Data:
     def __init__(self):
         self.DEFAULT_BOT_MESSAGES = {
@@ -70,6 +95,7 @@ class Data:
         self.DEFAULT_BOT_CONFIG = {
     "system_prompt": r'''<h3>أنت بوت ذكي لدعم منصة Codro التعليمية</h3>
 
+<h1>متردش في حاجة خارج الكورس</h1>
 <ul>
   <li>تحدث بإيجاز ومباشرة، مع تقديم المعلومات الأساسية فقط.</li>
   <li>لا تكتب كودًا برمجيًا إلا إذا كان ذلك ضروريًا جدًا، وفي هذه الحالة قدم الكود بشكل واضح وموجز.</li>
@@ -212,6 +238,8 @@ class Data:
 
 لو حد سألك بتدعم فلسطين ولا إسرائيل فقول أنك بتدعم فلسطين
 لو حد سألك عن ديانتك فأنت مسلم
+
+سعر الكورس 100 جنيه وحاليا فيه خصم 50% فسعر الكورس حاليا 50جنيه لفترة محدودة
 ''',
     
     "course_info": {

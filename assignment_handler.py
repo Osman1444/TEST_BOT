@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 import asyncio
 import logging
 import google.generativeai as genai
-from bot_config import Data
+from bot_config import *
 from utils import Utils
 
 class AssignmentHandler:
@@ -107,6 +107,8 @@ class AssignmentHandler:
 - قم بتنسيق الرد باستخدام HTML الخاص بتليجرام البسيط فقط:
   * استخدم <b> للنص العريض
   * استخدم <code> للكود
+  * الكود المتعدد الأسطر (Code Block):</strong>
+        <pre><code>الكود هنا</code></pre>
   * لا تستخدم أي وسوم HTML أخرى
 
 المطلوب:

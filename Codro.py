@@ -1,6 +1,9 @@
 import asyncio
 import time
+import random
+import os
 import google.generativeai as genai
+from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from bot_config import *
@@ -9,21 +12,12 @@ from utils import Utils
 from quiz_handler import QuizHandler
 from db_handler import DatabaseHandler
 from assignment_handler import AssignmentHandler
-import os
-import logging
 
 class CodroBot:
     def __init__(self):
         # Configuration and database structure
         self.bot_config = Data().DEFAULT_BOT_CONFIG
         self.bot_messages = Data().DEFAULT_BOT_MESSAGES
-
-        # Set up logging
-        logging.basicConfig(
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            level=logging.INFO
-        )
-        self.logger = logging.getLogger(__name__)
 
         # Initialize database handlers
         self.db_handler = DatabaseHandler()
@@ -56,9 +50,13 @@ class CodroBot:
         self.user_id = None
 
         # Initialize application
-        self.token = '7820673343:AAE3ISuGzoS_xVKdYo7ZSnXtRYtV3wsOep8'
+        self.token = '8159706465:AAHDt6pHctL4JU1OnF7h6z08zMSWXeK5h3o'
         self.application = Application.builder().token(self.token).connect_timeout(60.0).read_timeout(60.0).build()
         self._setup_handlers()
+        
+        # Initialize Flask app
+        self.app = Flask(__name__)
+        self.setup_webhook_handler()
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
@@ -69,8 +67,8 @@ class CodroBot:
         self.chat_history = await self.db_handler.get_chat_history(int(self.user_id))
 
         try:
-            # Configure Gemini
-            genai.configure(api_key="AIzaSyAAhhHq792UUWT-e_6Ft0uYpkcBJ6FK5bs")
+            # Configure Gemini API
+            genai.configure(api_key=get_gemini_api())
             model = genai.GenerativeModel(
                 model_name="gemini-2.0-flash-exp",
                 generation_config={
@@ -225,32 +223,24 @@ class CodroBot:
         if query.data == '1':
             await query.message.reply_text("تم اختيار كورس Python Basics! سيتم التواصل معك قريباً.", parse_mode="HTML")
 
+    def setup_webhook_handler(self):
+        @self.app.post('/webhook')
+        async def webhook_handler():
+            """Handle incoming webhook updates"""
+            if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
+                return 'Unauthorized', 403
+
+            update = Update.de_json(request.get_json(force=True), self.application.bot)
+            await self.application.process_update(update)
+            return 'OK', 200
+
     def run(self):
-        """تشغيل البوت"""
-        # For production with webhook on Railway
-        port = int(os.environ.get('PORT', 8443))
-        project_id = "228da3fd-d185-4e0e-90b5-0eccdf46c59c"
-        app_url = f"{project_id}.railway.app"
+        """تشغيل البوت باستخدام webhook"""
+        # Get the port from Railway environment variable
+        port = int(os.environ.get('PORT', '8443'))
         
-        webhook_url = f"https://{app_url}/{self.token}"
-        self.logger.info(f"Starting webhook on port {port}")
-        self.logger.info(f"Webhook URL: {webhook_url}")
-        
-        # Set webhook
-        import requests
-        try:
-            set_webhook_url = f"https://api.telegram.org/bot{self.token}/setWebhook?url={webhook_url}"
-            response = requests.get(set_webhook_url)
-            self.logger.info(f"Webhook set response: {response.json()}")
-        except Exception as e:
-            self.logger.error(f"Failed to set webhook: {e}")
-        
-        self.application.run_webhook(
-            listen="0.0.0.0",
-            port=port,
-            url_path=self.token,
-            webhook_url=webhook_url
-        )
+        # Start the Flask app
+        self.app.run(host='0.0.0.0', port=port)
 
 def main():
     bot = CodroBot()
