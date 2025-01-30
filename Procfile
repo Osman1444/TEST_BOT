@@ -1,2 +1,2 @@
-web: gunicorn -w 4 "Codro:CodroBot().app"
+web: gunicorn "Codro:CodroBot().app" --timeout 120
 worker: python Codro.py

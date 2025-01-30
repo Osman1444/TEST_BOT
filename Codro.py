@@ -251,8 +251,21 @@ class CodroBot:
         def index():
             return 'Bot is running!'
 
+    async def start_bot(self):
+        """Start the bot's event loop"""
+        await self.application.initialize()
+        await self.application.start()
+        await self.application.updater.start_polling()
+        print("Bot started successfully!")
+
     def run(self):
-        """تشغيل البوت باستخدام webhook"""
+        """تشغيل البوت مع Flask"""
+        # Start the bot in a separate thread
+        import threading
+        bot_thread = threading.Thread(target=lambda: asyncio.run(self.start_bot()))
+        bot_thread.start()
+        
+        # Start Flask
         port = int(os.environ.get('PORT', '8443'))
         self.app.run(host='0.0.0.0', port=port)
 
