@@ -292,7 +292,7 @@ class QuizHandler:
 {lessons_details}"""
         
         # Configure Gemini
-        genai.configure(api_key="AIzaSyAAhhHq792UUWT-e_6Ft0uYpkcBJ6FK5bs")
+        genai.configure(api_key=get_gemini_api())
         model = genai.GenerativeModel(
             model_name="gemini-2.0-flash-exp",
             generation_config={
@@ -531,7 +531,7 @@ class QuizHandler:
         evaluation_prompt = f"""<strong>النتيجة:</strong> {score}/{total_questions} ({percentage:.1f}%)\n\n{answers_summary}"""
 
         # Configure Gemini
-        genai.configure(api_key="AIzaSyAAhhHq792UUWT-e_6Ft0uYpkcBJ6FK5bs")
+        genai.configure(api_key=get_gemini_api())
         model = genai.GenerativeModel(
             model_name="gemini-2.0-flash-exp",
             generation_config={

@@ -19,7 +19,7 @@ class AssignmentHandler:
         self.lesson_ids = {}  # قاموس لتخزين معرفات الدروس
 
         # تهيئة Gemini
-        genai.configure(api_key="AIzaSyAAhhHq792UUWT-e_6Ft0uYpkcBJ6FK5bs")
+        genai.configure(api_key=get_gemini_api())
         self.model = genai.GenerativeModel(
             model_name="gemini-2.0-flash-exp",
             generation_config={
