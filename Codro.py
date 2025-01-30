@@ -20,10 +20,21 @@ app = Flask(__name__)
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
 PORT = int(os.getenv('PORT', 8443))
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
-SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')  
+SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')
 
 class CodroBot:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if self._initialized:
+            return
+            
         # Configuration and database structure
         self.bot_config = Data().DEFAULT_BOT_CONFIG
         self.bot_messages = Data().DEFAULT_BOT_MESSAGES
@@ -62,6 +73,7 @@ class CodroBot:
         self.token = '8159706465:AAHDt6pHctL4JU1OnF7h6z08zMSWXeK5h3o'
         self.application = Application.builder().token(self.token).connect_timeout(60.0).read_timeout(60.0).build()
         self._setup_handlers()
+        self._initialized = True
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
@@ -236,11 +248,11 @@ class CodroBot:
                 listen="0.0.0.0",
                 port=PORT,
                 webhook_url=f"{WEBHOOK_URL}/{self.token}",
-                secret_token=SECRET_TOKEN  
+                secret_token=SECRET_TOKEN
             )
         else:
             print("Starting bot in development mode with polling")
-            self.application.run_polling()
+            self.application.run_polling(drop_pending_updates=True)  # إضافة drop_pending_updates
 
 # Create bot instance
 bot = CodroBot()
