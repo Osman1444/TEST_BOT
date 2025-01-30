@@ -1,1 +1,1 @@
-worker: python Codro.py
+web: python Codro.py

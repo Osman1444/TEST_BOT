@@ -1,6 +1,7 @@
 import asyncio
 import time
 import random
+import os
 import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
@@ -10,6 +11,16 @@ from utils import Utils
 from quiz_handler import QuizHandler
 from db_handler import DatabaseHandler
 from assignment_handler import AssignmentHandler
+from flask import Flask, request
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Environment variables
+WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
+PORT = int(os.getenv('PORT', 8443))
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')  
 
 class CodroBot:
     def __init__(self):
@@ -54,7 +65,7 @@ class CodroBot:
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
-            print("❌ خطأ: user_id غير محدد")
+            print("خطأ: user_id غير محدد")
             return "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى."
             
         # استرجاع سجل المحادثة من قاعدة البيانات
@@ -110,7 +121,7 @@ class CodroBot:
         self.application.add_handler(CallbackQueryHandler(self.quiz_handler.handle_callback, pattern="^(course_|count_|lesson_|finish_)"))
         self.application.add_handler(CallbackQueryHandler(self.quiz_handler.handle_button_callback, pattern="^ans_"))
         self.application.add_handler(CallbackQueryHandler(self.assignment_handler.handle_callback, pattern="^assign_"))
-        self.application.add_handler(CallbackQueryHandler(self.bot_replys.button_callback, pattern="^python_"))  # إضافة معالج أزرار الكورسات
+        self.application.add_handler(CallbackQueryHandler(self.bot_replys.button_callback, pattern="^python_"))  
         
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
@@ -134,7 +145,7 @@ class CodroBot:
         print("إرسال رسالة 'جاري التحميل...'")
         loading_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="⏳",
+            text="",
             parse_mode="HTML"
         )
 
@@ -218,12 +229,43 @@ class CodroBot:
             await query.message.reply_text("تم اختيار كورس Python Basics! سيتم التواصل معك قريباً.", parse_mode="HTML")
 
     def run(self):
-        """تشغيل البوت"""
-        self.application.run_polling()
+        """Start the bot with webhook or polling based on environment"""
+        if ENVIRONMENT == 'production':
+            print(f"Starting bot in production mode with webhook URL: {WEBHOOK_URL}")
+            self.application.run_webhook(
+                listen="0.0.0.0",
+                port=PORT,
+                webhook_url=f"{WEBHOOK_URL}/{self.token}",
+                secret_token=SECRET_TOKEN  
+            )
+        else:
+            print("Starting bot in development mode with polling")
+            self.application.run_polling()
 
-def main():
-    bot = CodroBot()
-    return bot
+# Create bot instance
+bot = CodroBot()
+
+@app.route("/", methods=['GET'])
+def index():
+    return "Bot is running!"
+
+@app.route("/" + bot.token, methods=['POST'])
+async def webhook():
+    """Handle incoming webhook updates"""
+    if request.method == "POST":
+        # التحقق من Secret Token
+        if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != SECRET_TOKEN:
+            return 'Unauthorized', 403
+            
+        await bot.application.update_queue.put(
+            Update.de_json(request.get_json(force=True), bot.application.bot)
+        )
+        return "OK"
 
 if __name__ == '__main__':
-    main()
+    if ENVIRONMENT == 'production':
+        # Run the Flask app in production
+        app.run(host='0.0.0.0', port=PORT)
+    else:
+        # Run in development mode with polling
+        bot.run()
