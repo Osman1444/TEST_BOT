@@ -1,9 +1,7 @@
 import asyncio
 import time
 import random
-import os
 import google.generativeai as genai
-from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from bot_config import *
@@ -53,10 +51,6 @@ class CodroBot:
         self.token = '8159706465:AAHDt6pHctL4JU1OnF7h6z08zMSWXeK5h3o'
         self.application = Application.builder().token(self.token).connect_timeout(60.0).read_timeout(60.0).build()
         self._setup_handlers()
-        
-        # Initialize Flask app
-        self.app = Flask(__name__)
-        self.setup_webhook_handler()
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
@@ -223,55 +217,13 @@ class CodroBot:
         if query.data == '1':
             await query.message.reply_text("تم اختيار كورس Python Basics! سيتم التواصل معك قريباً.", parse_mode="HTML")
 
-    def setup_webhook_handler(self):
-        @self.app.route('/webhook', methods=['POST'])
-        def webhook_handler():
-            """Handle incoming webhook updates"""
-            try:
-                json_data = request.get_json(force=True)
-                print("Received update:", json_data)  # للتشخيص
-                
-                # تجاهل طلبات Railway
-                if isinstance(json_data, dict) and json_data.get('type') == 'DEPLOY':
-                    return 'OK', 200
-                
-                # معالجة تحديثات Telegram
-                if isinstance(json_data, dict) and 'update_id' in json_data:
-                    update = Update.de_json(json_data, self.application.bot)
-                    if update:
-                        asyncio.run(self.application.process_update(update))
-                    return 'OK', 200
-                
-                return 'Invalid update', 400
-            except Exception as e:
-                print(f"Error processing update: {str(e)}")  # للتشخيص
-                return 'Error processing update', 500
-
-        @self.app.route('/')
-        def index():
-            return 'Bot is running!'
-
-    async def start_bot(self):
-        """Start the bot's event loop"""
-        await self.application.initialize()
-        await self.application.start()
-        await self.application.updater.start_polling()
-        print("Bot started successfully!")
-
     def run(self):
-        """تشغيل البوت مع Flask"""
-        # Start the bot in a separate thread
-        import threading
-        bot_thread = threading.Thread(target=lambda: asyncio.run(self.start_bot()))
-        bot_thread.start()
-        
-        # Start Flask
-        port = int(os.environ.get('PORT', '8443'))
-        self.app.run(host='0.0.0.0', port=port)
+        """تشغيل البوت"""
+        self.application.run_polling()
 
 def main():
     bot = CodroBot()
-    bot.run()
+    return bot
 
 if __name__ == '__main__':
     main()
