@@ -2,6 +2,7 @@ import asyncio
 import time
 import random
 import os
+from threading import Thread
 import google.generativeai as genai
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -57,9 +58,6 @@ class CodroBot:
         # Initialize Flask app
         self.app = Flask(__name__)
         self.setup_webhook_handler()
-        
-        # Initialize the application
-        asyncio.run(self.application.initialize())
 
     async def gemini_response(self, message_t, system_prompt=None):
         if not self.user_id:
@@ -233,16 +231,20 @@ class CodroBot:
             if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
                 return 'Unauthorized', 403
 
-            # Create a new event loop for this request
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            update = Update.de_json(request.get_json(force=True), self.application.bot)
             
-            try:
-                update = Update.de_json(request.get_json(force=True), self.application.bot)
-                loop.run_until_complete(self.application.process_update(update))
-                return 'OK', 200
-            finally:
-                loop.close()
+            # Create a new thread to handle the update
+            thread = Thread(target=lambda: asyncio.run(self.process_update(update)))
+            thread.start()
+            return 'OK', 200
+
+    async def process_update(self, update: Update):
+        """Process a single update in a separate thread"""
+        try:
+            await self.application.initialize()
+            await self.application.process_update(update)
+        except Exception as e:
+            print(f"Error processing update: {e}")
 
     def run(self):
         """تشغيل البوت باستخدام webhook"""
