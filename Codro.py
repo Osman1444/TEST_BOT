@@ -235,16 +235,14 @@ class CodroBot:
                 if isinstance(json_data, dict) and json_data.get('type') == 'DEPLOY':
                     return 'OK', 200
                 
-                # التحقق من secret token فقط للطلبات من Telegram
-                if 'update_id' in json_data:
-                    if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != os.environ.get('SECRET_TOKEN'):
-                        return 'Unauthorized', 403
-                    
+                # معالجة تحديثات Telegram
+                if isinstance(json_data, dict) and 'update_id' in json_data:
                     update = Update.de_json(json_data, self.application.bot)
                     if update:
                         asyncio.run(self.application.process_update(update))
+                    return 'OK', 200
                 
-                return 'OK', 200
+                return 'Invalid update', 400
             except Exception as e:
                 print(f"Error processing update: {str(e)}")  # للتشخيص
                 return 'Error processing update', 500
@@ -255,10 +253,7 @@ class CodroBot:
 
     def run(self):
         """تشغيل البوت باستخدام webhook"""
-        # Get the port from Railway environment variable
         port = int(os.environ.get('PORT', '8443'))
-        
-        # Start the Flask app
         self.app.run(host='0.0.0.0', port=port)
 
 def main():
