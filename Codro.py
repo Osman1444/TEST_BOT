@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # Environment variables
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
-PORT = int(os.getenv('PORT', 8443))
+PORT = int(os.getenv('PORT', 8000))
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')
 
