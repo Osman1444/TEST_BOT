@@ -533,7 +533,7 @@ class QuizHandler:
         # Configure Gemini
         genai.configure(api_key=get_gemini_api())
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash-exp",
+            model_name="gemini-2.0-flash-thinking-exp-01-21",
             generation_config={
                 "temperature": 0.9,
                 "top_p": 0.95,
