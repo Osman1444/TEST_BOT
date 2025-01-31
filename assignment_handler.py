@@ -127,16 +127,6 @@ class AssignmentHandler:
             # تنظيف وتنسيق HTML
             cleaned_response = self.utils.clean_html(response)
             
-            # التأكد من أن النص يحتوي على وسوم HTML صحيحة فقط
-            allowed_tags = ['<b>', '</b>', '<code>', '</code>', '<br>']
-            for tag in allowed_tags:
-                if tag not in cleaned_response:
-                    # إضافة التنسيق الأساسي إذا لم يكن موجوداً
-                    cleaned_response = cleaned_response.replace('✍️', '<b>✍️</b>')
-                    cleaned_response = cleaned_response.replace('📋', '<b>📋</b>')
-                    cleaned_response = cleaned_response.replace('💡', '<b>💡</b>')
-                    break
-            
             # حفظ الرد في سجل المحادثة
             if self.db_handler:
                 chat_history = [
