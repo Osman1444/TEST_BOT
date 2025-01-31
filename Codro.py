@@ -238,4 +238,5 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=PORT)
     else:
         # Run in development mode with polling
-        bot.run()
+        print("Starting bot in development mode with polling...")
+        asyncio.run(bot.application.run_polling(drop_pending_updates=True))
