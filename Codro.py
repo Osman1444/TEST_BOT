@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # Environment variables
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
-PORT = int(os.getenv('PORT', 8000))
+PORT = int(os.getenv('PORT', 8443))
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')
 
@@ -201,7 +201,7 @@ class CodroBot:
     def run(self):
         """Start the bot with webhook or polling based on environment"""
         if ENVIRONMENT == 'production':
-            print(f"Starting bot in production mode on port {PORT}")
+            print(f"Starting bot in production mode with webhook URL: {WEBHOOK_URL}")
             self.application.run_webhook(
                 listen="0.0.0.0",
                 port=PORT,
@@ -209,8 +209,8 @@ class CodroBot:
                 secret_token=SECRET_TOKEN
             )
         else:
-            print(f"Starting bot in development mode with polling")
-            self.application.run_polling(drop_pending_updates=True)
+            print("Starting bot in development mode with polling")
+            self.application.run_polling(drop_pending_updates=True)  # إضافة drop_pending_updates
 
 # Create bot instance
 bot = CodroBot()
@@ -233,4 +233,9 @@ async def webhook():
         return "OK"
 
 if __name__ == '__main__':
-    bot.run()
+    if ENVIRONMENT == 'production':
+        # Run the Flask app in production
+        app.run(host='0.0.0.0', port=PORT)
+    else:
+        # Run in development mode with polling
+        bot.run()

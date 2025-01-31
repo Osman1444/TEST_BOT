@@ -20,7 +20,7 @@ async def webhook():
 if __name__ == '__main__':
     # Set webhook URL
     WEBHOOK_URL = 'https://test-bot.up.railway.app/webhook'
-    PORT = int(os.environ.get('PORT', 8000))
+    PORT = int(os.environ.get('PORT', 5000))
     
     # Set the webhook
     bot.application.bot.set_webhook(WEBHOOK_URL)
