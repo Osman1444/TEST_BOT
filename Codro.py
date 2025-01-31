@@ -19,8 +19,8 @@ app = Flask(__name__)
 # Environment variables
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
 PORT = int(os.getenv('PORT', 8443))
-ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
-SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'default-unsafe-token')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'production')  # تغيير القيمة الافتراضية إلى production
+SECRET_TOKEN = os.getenv('SECRET_TOKEN', 'a8b9c33eb985d69287fa975afacc4ad4d35070c5ccc11dfa925da279e55f2d3e')
 
 class CodroBot:
     _instance = None
@@ -233,10 +233,24 @@ async def webhook():
         return "OK"
 
 if __name__ == '__main__':
-    if ENVIRONMENT == 'production':
-        # Run the Flask app in production
-        app.run(host='0.0.0.0', port=PORT)
-    else:
-        # Run in development mode with polling
-        print("Starting bot in development mode with polling...")
-        asyncio.run(bot.application.run_polling(drop_pending_updates=True))
+    try:
+        print("Starting the bot...")
+        if ENVIRONMENT == 'production':
+            # Set up the webhook
+            print(f"Setting webhook to {WEBHOOK_URL}")
+            bot.application.run_webhook(
+                listen="0.0.0.0",
+                port=PORT,
+                url_path=bot.token,
+                webhook_url=f"{WEBHOOK_URL}/{bot.token}",
+                secret_token=SECRET_TOKEN
+            )
+        else:
+            # Run in development mode with polling
+            print("Running in development mode with polling")
+            print("Bot token:", bot.token)
+            print("Initializing application...")
+            asyncio.run(bot.application.run_polling(drop_pending_updates=True))
+    except Exception as e:
+        print(f"Error starting bot: {str(e)}")
+        raise e
