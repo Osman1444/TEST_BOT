@@ -70,7 +70,7 @@ class CodroBot:
         self.user_id = None
 
         # Initialize application
-        self.token = '7820673343:AAE3ISuGzoS_xVKdYo7ZSnXtRYtV3wsOep8'
+        self.token = '7828553252:AAFBfrF6v6oatmWfERorKYSXvQMTi7bKD1U'
         self.application = Application.builder().token(self.token).connect_timeout(60.0).read_timeout(60.0).build()
         self._setup_handlers()
         self._initialized = True
@@ -202,40 +202,41 @@ class CodroBot:
         """Start the bot with webhook or polling based on environment"""
         if ENVIRONMENT == 'production':
             print(f"Starting bot in production mode with webhook URL: {WEBHOOK_URL}")
+            # Set webhook
             self.application.run_webhook(
                 listen="0.0.0.0",
                 port=PORT,
+                url_path=self.token,
                 webhook_url=f"{WEBHOOK_URL}/{self.token}",
                 secret_token=SECRET_TOKEN
             )
         else:
             print("Starting bot in development mode with polling")
-            self.application.run_polling(drop_pending_updates=True)  # إضافة drop_pending_updates
+            self.application.run_polling(drop_pending_updates=True)
 
 # Create bot instance
 bot = CodroBot()
 
-@app.route("/", methods=['GET'])
+@app.route("/")
 def index():
     return "Bot is running!"
 
 @app.route("/" + bot.token, methods=['POST'])
-async def webhook():
+def webhook():
     """Handle incoming webhook updates"""
     if request.method == "POST":
         # التحقق من Secret Token
         if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != SECRET_TOKEN:
             return 'Unauthorized', 403
             
-        await bot.application.update_queue.put(
-            Update.de_json(request.get_json(force=True), bot.application.bot)
-        )
+        update = Update.de_json(request.get_json(force=True), bot.application.bot)
+        bot.application.process_update(update)
         return "OK"
 
 if __name__ == '__main__':
     if ENVIRONMENT == 'production':
-        # Run the Flask app in production
+        # Run Flask app for webhook
         app.run(host='0.0.0.0', port=PORT)
     else:
-        # Run in development mode with polling
+        # Run in polling mode
         bot.run()
