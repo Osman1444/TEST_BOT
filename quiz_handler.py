@@ -357,6 +357,13 @@ class QuizHandler:
         # استخراج رقم السؤال والإجابة المختارة
         _, q_num, ans_index = query.data.split('_')
         q_num = int(q_num)
+        
+        # التحقق من أن المستخدم يجيب على السؤال الحالي
+        current_question_num = self.current_quiz[user_id]['current_question'] + 1
+        if q_num != current_question_num:
+            await query.answer("عذراً، لا يمكنك الإجابة على الأسئلة السابقة. يرجى الإجابة على السؤال الحالي.")
+            return
+            
         current_q = self.current_quiz[user_id]['questions'][q_num - 1]
         selected_answer = current_q['options'][int(ans_index)]
         
