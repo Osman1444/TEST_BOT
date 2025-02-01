@@ -11,10 +11,6 @@ from utils import Utils
 from quiz_handler import QuizHandler
 from db_handler import DatabaseHandler
 from assignment_handler import AssignmentHandler
-from flask import Flask, request
-
-# Initialize Flask app
-app = Flask(__name__)
 
 # Environment variables
 WEBHOOK_URL = os.getenv('WEBHOOK_URL', 'https://test-bot.up.railway.app')
@@ -215,23 +211,6 @@ class CodroBot:
 # Create bot instance
 bot = CodroBot()
 
-@app.route("/", methods=['GET'])
-def index():
-    return "Bot is running!"
-
-@app.route("/" + bot.token, methods=['POST'])
-async def webhook():
-    """Handle incoming webhook updates"""
-    if request.method == "POST":
-        # التحقق من Secret Token
-        if request.headers.get('X-Telegram-Bot-Api-Secret-Token') != SECRET_TOKEN:
-            return 'Unauthorized', 403
-            
-        await bot.application.update_queue.put(
-            Update.de_json(request.get_json(force=True), bot.application.bot)
-        )
-        return "OK"
-
 if __name__ == '__main__':
     try:
         print("Starting the bot...")
@@ -240,10 +219,9 @@ if __name__ == '__main__':
             print(f"Setting webhook to {WEBHOOK_URL}")
             bot.application.run_webhook(
                 listen="0.0.0.0",
-                port=PORT,
-                url_path=bot.token,
-                webhook_url=f"{WEBHOOK_URL}/{bot.token}",
-                secret_token=SECRET_TOKEN
+                port=int(PORT),
+                secret_token=SECRET_TOKEN,
+                webhook_url=f"{WEBHOOK_URL}/{bot.token}"
             )
         else:
             # Run in development mode with polling
